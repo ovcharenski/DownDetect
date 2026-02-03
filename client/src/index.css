@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark neutral theme */
+  --background: 0 0% 7%;
+  --foreground: 0 0% 93%;
+
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 93%;
+
+  --popover: 0 0% 10%;
+  --popover-foreground: 0 0% 70%;
+
+  /* Neutral gray primary */
+  --primary: 0 0% 70%;
+  --primary-foreground: 0 0% 7%;
+
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 0 0% 93%;
+
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 60%;
+
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 93%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 0 0% 18%;
+  --input: 0 0% 18%;
+  --ring: 0 0% 30%;
+
+  --radius: 0.5rem;
+
+  /* Custom Status Colors */
+  --status-healthy: 142 71% 45%;
+  --status-degraded: 45 93% 47%;
+  --status-unhealthy: 0 84% 60%;
+
+  /* Fonts */
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+/* Custom Utilities for Polish */
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 20px hsla(var(--primary), 0.5);
+  }
+  .glass-panel {
+    @apply bg-card/50 backdrop-blur-xl border border-white/5;
+  }
+  .card-gradient {
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  }
+  .status-dot {
+    @apply w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)];
+  }
+}
+
+/* Status Indicator Classes */
+.status-healthy {
+  @apply bg-[hsl(var(--status-healthy))] text-[hsl(var(--status-healthy))];
+  box-shadow: 0 0 12px hsla(var(--status-healthy), 0.4);
+}
+.status-degraded {
+  @apply bg-[hsl(var(--status-degraded))] text-[hsl(var(--status-degraded))];
+  box-shadow: 0 0 12px hsla(var(--status-degraded), 0.4);
+}
+.status-unhealthy {
+  @apply bg-[hsl(var(--status-unhealthy))] text-[hsl(var(--status-unhealthy))];
+  box-shadow: 0 0 12px hsla(var(--status-unhealthy), 0.4);
+}
