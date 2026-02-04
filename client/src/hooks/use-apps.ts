@@ -11,18 +11,13 @@ function getAutoRefetchIntervalMs(): number | false {
   return minutes * 60 * 1000;
 }
 
-// List all apps
+// List all apps - public (no auth required)
 export function useApps() {
   const refetchInterval = getAutoRefetchIntervalMs();
   return useQuery({
     queryKey: [api.apps.list.path],
     queryFn: async () => {
-      const res = await fetch(api.apps.list.path, {
-        headers: withAuthHeaders(),
-      });
-      if (res.status === 401) {
-        throw new Error("Unauthorized: set KEY_ACCESS/VITE_KEY_ACCESS (or enter it when prompted).");
-      }
+      const res = await fetch(api.apps.list.path);
       if (!res.ok) throw new Error("Failed to fetch apps");
       return api.apps.list.responses[200].parse(await res.json());
     },
@@ -30,18 +25,13 @@ export function useApps() {
   });
 }
 
-// Get single app details
+// Get single app details - public (no auth required)
 export function useApp(internalName: string) {
   return useQuery({
     queryKey: [api.apps.get.path, internalName],
     queryFn: async () => {
       const url = buildUrl(api.apps.get.path, { internal_name: internalName });
-      const res = await fetch(url, {
-        headers: withAuthHeaders(),
-      });
-      if (res.status === 401) {
-        throw new Error("Unauthorized: set KEY_ACCESS/VITE_KEY_ACCESS (or enter it when prompted).");
-      }
+      const res = await fetch(url);
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch app details");
       return api.apps.get.responses[200].parse(await res.json());
@@ -49,19 +39,14 @@ export function useApp(internalName: string) {
   });
 }
 
-// Get app status history
+// Get app status history - public (no auth required)
 export function useAppStatus(internalName: string, limit = 50) {
   const refetchInterval = getAutoRefetchIntervalMs();
   return useQuery({
     queryKey: [api.apps.getStatus.path, internalName, limit],
     queryFn: async () => {
       const url = buildUrl(api.apps.getStatus.path, { internal_name: internalName });
-      const res = await fetch(`${url}?limit=${limit}`, {
-        headers: withAuthHeaders(),
-      });
-      if (res.status === 401) {
-        throw new Error("Unauthorized: set KEY_ACCESS/VITE_KEY_ACCESS (or enter it when prompted).");
-      }
+      const res = await fetch(`${url}?limit=${limit}`);
       if (!res.ok) throw new Error("Failed to fetch app status history");
       return api.apps.getStatus.responses[200].parse(await res.json());
     },
@@ -69,19 +54,14 @@ export function useAppStatus(internalName: string, limit = 50) {
   });
 }
 
-// Get app stats
+// Get app stats - public (no auth required)
 export function useAppStats(internalName: string, days = 30) {
   const refetchInterval = getAutoRefetchIntervalMs();
   return useQuery({
     queryKey: [api.apps.getStats.path, internalName, days],
     queryFn: async () => {
       const url = buildUrl(api.apps.getStats.path, { internal_name: internalName });
-      const res = await fetch(`${url}?days=${days}`, {
-        headers: withAuthHeaders(),
-      });
-      if (res.status === 401) {
-        throw new Error("Unauthorized: set KEY_ACCESS/VITE_KEY_ACCESS (or enter it when prompted).");
-      }
+      const res = await fetch(`${url}?days=${days}`);
       if (!res.ok) throw new Error("Failed to fetch app stats");
       return api.apps.getStats.responses[200].parse(await res.json());
     },

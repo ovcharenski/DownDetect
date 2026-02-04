@@ -33,8 +33,8 @@ export async function registerRoutes(
     });
   });
 
-  // Apps List - requires KEY_ACCESS
-  app.get(api.apps.list.path, requireAuth, async (_req, res) => {
+  // Apps List - public (no auth required)
+  app.get(api.apps.list.path, async (_req, res) => {
     const apps = await storage.getApps();
     const appsWithStatus = await Promise.all(
       apps.map(async (app) => {
@@ -45,16 +45,16 @@ export async function registerRoutes(
     res.json(appsWithStatus);
   });
 
-  // App Details - requires KEY_ACCESS
-  app.get(api.apps.get.path, requireAuth, async (req, res) => {
+  // App Details - public (no auth required)
+  app.get(api.apps.get.path, async (req, res) => {
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
     res.json(app);
   });
 
-  // App History - requires KEY_ACCESS
-  app.get(api.apps.getStatus.path, requireAuth, async (req, res) => {
+  // App History - public (no auth required)
+  app.get(api.apps.getStatus.path, async (req, res) => {
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
@@ -64,8 +64,8 @@ export async function registerRoutes(
     res.json(checks);
   });
 
-  // App Stats - requires KEY_ACCESS
-  app.get(api.apps.getStats.path, requireAuth, async (req, res) => {
+  // App Stats - public (no auth required)
+  app.get(api.apps.getStats.path, async (req, res) => {
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
