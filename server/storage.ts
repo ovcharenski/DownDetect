@@ -18,10 +18,10 @@ export interface IStorage {
   getChecksSince(appId: number, since: Date): Promise<StatusCheck[]>;
   
   // Stats
-  getAppStats(appId: number, days: number): Promise<AppStatsResponse>;
+  getAppStats(appId: number, hours: number): Promise<AppStatsResponse>;
   
   // Maintenance
-  cleanupOldChecks(days: number): Promise<number>;
+  cleanupOldChecks(hours: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -86,13 +86,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(statusChecks)
       .where(and(eq(statusChecks.appId, appId), gte(statusChecks.checkedAt, since)))
-      .orderBy(statusChecks.checkedAt); // Ascending for graphs
+      .orderBy(desc(statusChecks.checkedAt)); // Newest first for UI; client reverses for chart
   }
 
-  async getAppStats(appId: number, days: number): Promise<AppStatsResponse> {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-
+  async getAppStats(appId: number, hours: number): Promise<AppStatsResponse> {
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
     const checks = await this.getChecksSince(appId, since);
     
     if (checks.length === 0) {
@@ -121,10 +119,8 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async cleanupOldChecks(days: number): Promise<number> {
-    const threshold = new Date();
-    threshold.setDate(threshold.getDate() - days);
-    // Convert to Unix timestamp (seconds) since SQLite stores timestamps as integers
+  async cleanupOldChecks(hours: number): Promise<number> {
+    const threshold = new Date(Date.now() - hours * 60 * 60 * 1000);
     const thresholdTimestamp = Math.floor(threshold.getTime() / 1000);
 
     const result = await db.delete(statusChecks).where(sql`${statusChecks.checkedAt} < ${thresholdTimestamp}`);

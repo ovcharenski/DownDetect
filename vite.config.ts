@@ -1,9 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { readFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+const pkg = JSON.parse(readFileSync(path.join(import.meta.dirname, "package.json"), "utf-8"));
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   // Vite loads .env files relative to envDir; since we use `root: client`,
   // we explicitly point envDir to the repository root so `.env` lives next to package.json.
   envDir: path.resolve(import.meta.dirname),

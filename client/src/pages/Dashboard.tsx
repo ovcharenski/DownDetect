@@ -1,51 +1,48 @@
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-import { Server, Clock, ArrowRight, RefreshCw } from "lucide-react";
+import { Server, Clock, ArrowRight } from "lucide-react";
 import { useApps } from "@/hooks/use-apps";
 import { StatusBadge } from "@/components/StatusBadge";
-import { CreateAppDialog } from "@/components/CreateAppDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { queryClient } from "@/lib/queryClient";
-import { api } from "@shared/routes";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Dashboard() {
-  const { data: apps, isLoading, error, isFetching } = useApps();
-
-  const handleRefresh = () => {
-    // Make all auto-refreshed queries behave as if their interval just fired.
-    queryClient.invalidateQueries({ queryKey: [api.apps.list.path] });
-    queryClient.invalidateQueries({ queryKey: [api.apps.getStatus.path] });
-    queryClient.invalidateQueries({ queryKey: [api.apps.getStats.path] });
-  };
+  const { data: apps, isLoading, error } = useApps();
 
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <div className="p-8 text-red-500">Error loading dashboard: {error.message}</div>;
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12 space-y-8">
+    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto space-y-8">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2">
-            DownDetect
-          </h1>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2 cursor-default inline-block">
+                DownDetect
+              </h1>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="flex flex-col gap-1.5 p-3 max-w-xs">
+              {(import.meta as any).env?.VITE_STAFF_URL ? (
+                <a
+                  href={(import.meta as any).env.VITE_STAFF_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Developed by NS Staff
+                </a>
+              ) : (
+                <span className="font-medium">Developed by NS Staff</span>
+              )}
+              <span className="text-muted-foreground text-xs">v{__APP_VERSION__}</span>
+            </TooltipContent>
+          </Tooltip>
           <p className="text-muted-foreground text-lg">
             Real-time monitoring for all internal services.
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="default"
-            onClick={handleRefresh}
-            disabled={isFetching}
-            data-testid="button-refresh"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <CreateAppDialog />
         </div>
       </div>
 
@@ -102,10 +99,10 @@ export default function Dashboard() {
         {apps?.length === 0 && (
           <div className="col-span-full py-20 text-center border border-dashed border-white/10 rounded-xl bg-card/20">
             <h3 className="text-xl font-medium text-foreground">No applications monitored</h3>
-            <p className="text-muted-foreground mt-2 mb-6">Add your first endpoint to start monitoring.</p>
-            <CreateAppDialog />
+            <p className="text-muted-foreground mt-2">Use API with KEY_ACCESS to add applications.</p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
@@ -113,19 +110,17 @@ export default function Dashboard() {
 
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12 space-y-8">
+    <div className="min-h-screen bg-background p-6 md:p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
         <div className="space-y-2">
           <Skeleton className="h-10 w-64 bg-secondary" />
           <Skeleton className="h-5 w-96 bg-secondary" />
         </div>
-        <div className="flex gap-3">
-          <Skeleton className="h-10 w-28 bg-secondary" />
-          <Skeleton className="h-10 w-32 bg-secondary" />
-        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-56 rounded-xl bg-secondary" />)}
+      </div>
       </div>
     </div>
   );

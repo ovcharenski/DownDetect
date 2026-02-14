@@ -1,75 +1,35 @@
-import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
-import { ArrowLeft, ExternalLink, RefreshCw, Clock, Globe, Trash2 } from "lucide-react";
-import { useApp, useAppStatus, useAppStats, useTriggerCheck, useDeleteApp } from "@/hooks/use-apps";
+import { ArrowLeft, ExternalLink, Globe } from "lucide-react";
+import { useApp, useAppStatus, useAppStats, useAppStatusRecent } from "@/hooks/use-apps";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
+const HOURS_24 = 24;
+const RECENT_LIMIT = 20;
 
 export default function AppDetails() {
   const params = useParams<{ internal_name: string }>();
   const internalName = params.internal_name || "";
-
-  const [days, setDays] = useState(30);
-  const { toast } = useToast();
   const isMobile = useIsMobile();
 
   const { data: app, isLoading: isAppLoading } = useApp(internalName);
-  const { data: statusHistory } = useAppStatus(internalName, 20);
-  const { data: stats } = useAppStats(internalName, days);
-
-  const triggerCheck = useTriggerCheck();
-  const deleteApp = useDeleteApp();
+  const { data: statusHistory } = useAppStatus(internalName, HOURS_24);
+  const { data: statusRecent } = useAppStatusRecent(internalName, RECENT_LIMIT);
+  const { data: stats } = useAppStats(internalName, HOURS_24);
 
   if (isAppLoading) return <div className="p-12 text-center text-muted-foreground">Loading app details...</div>;
   if (!app) return <div className="p-12 text-center text-red-500">App not found</div>;
 
-  const handleManualCheck = () => {
-    triggerCheck.mutate(internalName, {
-      onSuccess: () => toast({ title: "Check triggered", description: "Status updated successfully." }),
-      onError: () => toast({ title: "Check failed", description: "Could not verify app status.", variant: "destructive" }),
-    });
-  };
-
-  const handleDelete = () => {
-    deleteApp.mutate(internalName, {
-      onSuccess: () => {
-        toast({ title: "Application deleted", description: `${app.displayName} has been removed.` });
-        window.location.href = "/";
-      },
-      onError: (error) => {
-        toast({
-          title: "Delete failed",
-          description: error.message || "Could not delete app.",
-          variant: "destructive",
-        });
-      },
-    });
-  };
-
-  // Latest status for header badge
-  const latestStatus = statusHistory && statusHistory.length > 0
-    ? statusHistory[0].status
+  // Latest status for header badge (from last 20 checks)
+  const latestStatus = statusRecent && statusRecent.length > 0
+    ? statusRecent[0].status
     : "unknown";
 
-  // Transform recent history for response time chart
+  // Charts: last 24 hours
   const chartData = statusHistory?.slice().reverse().map(check => ({
     time: format(new Date(check.checkedAt), "HH:mm"),
     latency: check.responseTime || 0,
@@ -97,84 +57,12 @@ export default function AppDetails() {
             </div>
           </div>
 
-          {isMobile ? (
-            <div className="flex flex-col gap-2 w-full mt-1">
-              <StatusBadge
-                status={latestStatus}
-                showText={true}
-                className="w-full justify-center"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManualCheck}
-                disabled={triggerCheck.isPending}
-                className="w-full"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${triggerCheck.isPending ? "animate-spin" : ""}`} />
-                Check Now
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full"
-                    disabled={deleteApp.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete application?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently remove <span className="font-semibold">{app.displayName}</span> and all related status history.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} disabled={deleteApp.isPending}>
-                      Confirm delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={handleManualCheck} disabled={triggerCheck.isPending}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${triggerCheck.isPending ? "animate-spin" : ""}`} />
-                Check Now
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={deleteApp.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete application?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently remove <span className="font-semibold">{app.displayName}</span> and all related status history.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} disabled={deleteApp.isPending}>
-                      Confirm delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+          {isMobile && (
+            <StatusBadge
+              status={latestStatus}
+              showText={true}
+              className="w-full justify-center"
+            />
           )}
         </div>
       </div>
@@ -200,7 +88,7 @@ export default function AppDetails() {
 
           <Card className="bg-card border-white/5">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Uptime ({days}d)</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Uptime (24h)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">
@@ -230,20 +118,8 @@ export default function AppDetails() {
           <div className="lg:col-span-2 space-y-8">
             <Card className="bg-card border-white/5">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Response Time History</CardTitle>
-                  <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Last 24h</SelectItem>
-                      <SelectItem value="7">Last 7 days</SelectItem>
-                      <SelectItem value="30">Last 30 days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <CardDescription>Latency over recent checks (ms)</CardDescription>
+                <CardTitle>Response Time History</CardTitle>
+                <CardDescription>Last 24 hours — latency over recent checks (ms)</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px] w-full">
@@ -263,7 +139,7 @@ export default function AppDetails() {
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(v) => `${v}ms`}
+                        tickFormatter={(v: number) => `${v}ms`}
                       />
                       <Tooltip
                         contentStyle={{
@@ -328,7 +204,7 @@ export default function AppDetails() {
           <Card className="bg-card border-white/5 lg:h-full">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Last 20 automated checks</CardDescription>
+              <CardDescription>Last 20 checks</CardDescription>
             </CardHeader>
             <CardContent className="px-0">
               <Table>
@@ -340,7 +216,7 @@ export default function AppDetails() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {statusHistory?.map((check) => (
+                  {statusRecent?.map((check) => (
                     <TableRow key={check.id} className="border-white/5 hover:bg-white/5">
                       <TableCell className="pl-6 font-mono text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(check.checkedAt), { addSuffix: true })}
@@ -353,7 +229,7 @@ export default function AppDetails() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {(!statusHistory || statusHistory.length === 0) && (
+                  {(!statusRecent || statusRecent.length === 0) && (
                     <TableRow>
                       <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                         No checks recorded yet.

@@ -39,14 +39,14 @@ export function useApp(internalName: string) {
   });
 }
 
-// Get app status history - public (no auth required)
-export function useAppStatus(internalName: string, limit = 50) {
+// Get app status history - public, last N hours (for charts)
+export function useAppStatus(internalName: string, hours = 24) {
   const refetchInterval = getAutoRefetchIntervalMs();
   return useQuery({
-    queryKey: [api.apps.getStatus.path, internalName, limit],
+    queryKey: [api.apps.getStatus.path, internalName, "hours", hours],
     queryFn: async () => {
       const url = buildUrl(api.apps.getStatus.path, { internal_name: internalName });
-      const res = await fetch(`${url}?limit=${limit}`);
+      const res = await fetch(`${url}?hours=${hours}`);
       if (!res.ok) throw new Error("Failed to fetch app status history");
       return api.apps.getStatus.responses[200].parse(await res.json());
     },
@@ -54,14 +54,29 @@ export function useAppStatus(internalName: string, limit = 50) {
   });
 }
 
-// Get app stats - public (no auth required)
-export function useAppStats(internalName: string, days = 30) {
+// Last N checks (for Recent Activity table)
+export function useAppStatusRecent(internalName: string, limit = 20) {
   const refetchInterval = getAutoRefetchIntervalMs();
   return useQuery({
-    queryKey: [api.apps.getStats.path, internalName, days],
+    queryKey: [api.apps.getStatus.path, internalName, "limit", limit],
+    queryFn: async () => {
+      const url = buildUrl(api.apps.getStatus.path, { internal_name: internalName });
+      const res = await fetch(`${url}?limit=${limit}`);
+      if (!res.ok) throw new Error("Failed to fetch recent checks");
+      return api.apps.getStatus.responses[200].parse(await res.json());
+    },
+    refetchInterval,
+  });
+}
+
+// Get app stats - public (no auth required), last N hours
+export function useAppStats(internalName: string, hours = 24) {
+  const refetchInterval = getAutoRefetchIntervalMs();
+  return useQuery({
+    queryKey: [api.apps.getStats.path, internalName, hours],
     queryFn: async () => {
       const url = buildUrl(api.apps.getStats.path, { internal_name: internalName });
-      const res = await fetch(`${url}?days=${days}`);
+      const res = await fetch(`${url}?hours=${hours}`);
       if (!res.ok) throw new Error("Failed to fetch app stats");
       return api.apps.getStats.responses[200].parse(await res.json());
     },

@@ -5,14 +5,13 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 
 const CHECK_INTERVAL = Number(process.env.VITE_AUTO_TIME) * 60 || 60; // seconds
-const EXPIRE_DAYS = Number(process.env.EXPIRE_DAYS) || 30;
+const EXPIRE_HOURS = Number(process.env.EXPIRE_HOURS) || 24;
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
+  const apiKey = req.headers["x-api-key"];
   const key = process.env.KEY_ACCESS || "default_dev_key"; // Fallback for dev ease
 
-
-  if (!authHeader || authHeader !== `Bearer ${key}`) {
+  if (!apiKey || apiKey !== key) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   next();
@@ -53,25 +52,31 @@ export async function registerRoutes(
     res.json(app);
   });
 
-  // App History - public (no auth required)
+  // App History - public: ?limit=N = last N checks (e.g. Recent Activity), ?hours=N = checks in last N hours (e.g. charts)
   app.get(api.apps.getStatus.path, async (req, res) => {
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
 
-    const limit = Number(req.query.limit) || 50;
-    const checks = await storage.getStatusChecks(app.id, limit);
+    const limit = req.query.limit != null ? Number(req.query.limit) : null;
+    if (limit != null && limit > 0) {
+      const checks = await storage.getStatusChecks(app.id, limit);
+      return res.json(checks);
+    }
+    const hours = Number(req.query.hours) || 24;
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+    const checks = await storage.getChecksSince(app.id, since);
     res.json(checks);
   });
 
-  // App Stats - public (no auth required)
+  // App Stats - public (no auth required), last N hours
   app.get(api.apps.getStats.path, async (req, res) => {
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
 
-    const days = Number(req.query.days) || 30;
-    const stats = await storage.getAppStats(app.id, days);
+    const hours = Number(req.query.hours) || 24;
+    const stats = await storage.getAppStats(app.id, hours);
     res.json(stats);
   });
 
@@ -202,23 +207,22 @@ function startScheduler() {
 
   setInterval(runChecks, CHECK_INTERVAL * 1000);
 
-  // Cleanup old checks once at startup and then daily (only log if something was deleted)
-  storage.cleanupOldChecks(EXPIRE_DAYS).then((count) => {
+  // Cleanup checks older than 24h at startup and then hourly
+  storage.cleanupOldChecks(EXPIRE_HOURS).then((count) => {
     if (count > 0) {
       console.log(`Cleaned up ${count} old checks`);
     }
   });
 
-  // Cleanup daily
   setInterval(
     () => {
-      storage.cleanupOldChecks(EXPIRE_DAYS).then((count) => {
+      storage.cleanupOldChecks(EXPIRE_HOURS).then((count) => {
         if (count > 0) {
           console.log(`Cleaned up ${count} old checks`);
         }
       });
     },
-    24 * 60 * 60 * 1000,
+    60 * 60 * 1000,
   );
 }
 

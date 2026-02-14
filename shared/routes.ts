@@ -51,7 +51,8 @@ export const api = {
       method: 'GET' as const,
       path: '/api/apps/:internal_name/status',
       input: z.object({
-        limit: z.coerce.number().optional().default(50),
+        hours: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
       }),
       responses: {
         200: z.array(z.custom<typeof statusChecks.$inferSelect>()),
@@ -62,7 +63,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/apps/:internal_name/stats',
       input: z.object({
-        days: z.coerce.number().optional().default(30),
+        hours: z.coerce.number().optional().default(24),
       }),
       responses: {
         200: z.object({

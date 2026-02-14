@@ -2,9 +2,11 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "@shared/schema";
 import { existsSync, mkdirSync } from "fs";
-import { dirname } from "path";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
-const DB_PATH = "./data/system.db";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DB_PATH = join(__dirname, "..", "data", "system.db");
 
 // Ensure the data directory exists
 const dataDir = dirname(DB_PATH);
