@@ -153,7 +153,7 @@ async function checkAppStatus(app: any) {
     if (response.ok) {
       status = duration > 2000 ? "degraded" : "healthy"; // Simple threshold for degraded
 
-      // Try to extract version from headers (common headers: X-Version, X-API-Version, Version)
+      // Try to extract version and status from headers (common headers: X-Version, X-API-Version, Version)
       version =
         response.headers.get("X-Version") ||
         response.headers.get("X-API-Version") ||
@@ -162,21 +162,24 @@ async function checkAppStatus(app: any) {
         response.headers.get("x-api-version") ||
         undefined;
 
-      // If not in headers, try to parse JSON body for version field
-      if (!version) {
-        try {
-          const contentType = response.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const text = await response.text();
-            if (text) {
-              const json = JSON.parse(text);
-              version =
-                json.version || json.Version || json.VERSION || undefined;
+      try {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const text = await response.text();
+          if (text) {
+            const json = JSON.parse(text);
+            // Use status from app response if present (healthy/degraded/unhealthy)
+            const appStatus = (json.status || json.Status || json.STATUS)?.toLowerCase?.();
+            if (appStatus === "healthy" || appStatus === "degraded" || appStatus === "unhealthy") {
+              status = appStatus;
+            }
+            if (!version) {
+              version = json.version || json.Version || json.VERSION || undefined;
             }
           }
-        } catch (e) {
-          // Ignore JSON parsing errors, version is optional
         }
+      } catch (e) {
+        // Ignore JSON parsing errors, version/status are optional
       }
     } else {
       status = "unhealthy";

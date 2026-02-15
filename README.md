@@ -1,4 +1,4 @@
-# 📡 DownDetect v2.1.2
+# 📡 DownDetect v2.1.3
 
 Real-time monitoring for internal services. Dashboard for uptime, response time and status checks. **API-only management with X-API-Key authentication.**
 
@@ -129,14 +129,14 @@ X-API-Key: <KEY_ACCESS>
 
 ### Public Endpoints (no auth)
 
-| Method | Endpoint                                   | Description                         |
-| ------ | ------------------------------------------ | ----------------------------------- |
-| GET    | `/api/health`                              | Health check                        |
-| GET    | `/api/apps`                                | List all apps with last check       |
-| GET    | `/api/apps/:internal_name`                 | Get one app                         |
+| Method | Endpoint                                   | Description                                |
+| ------ | ------------------------------------------ | ------------------------------------------ |
+| GET    | `/api/health`                              | Health check                               |
+| GET    | `/api/apps`                                | List all apps with last check              |
+| GET    | `/api/apps/:internal_name`                 | Get one app                                |
 | GET    | `/api/apps/:internal_name/status?hours=24` | Status checks in last N hours (for charts) |
 | GET    | `/api/apps/:internal_name/status?limit=20` | Last N checks (for Recent Activity table)  |
-| GET    | `/api/apps/:internal_name/stats?hours=24`  | Uptime & avg latency (last N hours) |
+| GET    | `/api/apps/:internal_name/stats?hours=24`  | Uptime & avg latency (last N hours)        |
 
 ### Protected Endpoints (X-API-Key required)
 
@@ -203,4 +203,4 @@ curl -X DELETE "http://localhost:4635/api/apps/my-api" \
 
 ## 📋 Version
 
-**Version:** 2.1.2 — API-only management, 24h retention, X-API-Key auth
+**Version:** 2.1.3 — API-only management, 24h retention, X-API-Key auth
