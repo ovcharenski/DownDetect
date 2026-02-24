@@ -1,4 +1,4 @@
-# 📡 DownDetect v2.1.3
+# 📡 DownDetect v2.1.4
 
 Real-time monitoring for internal services. Dashboard for uptime, response time and status checks. **API-only management with X-API-Key authentication.**
 
@@ -203,4 +203,4 @@ curl -X DELETE "http://localhost:4635/api/apps/my-api" \
 
 ## 📋 Version
 
-**Version:** 2.1.3 — API-only management, 24h retention, X-API-Key auth
+**Version:** 2.1.4
