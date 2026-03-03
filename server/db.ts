@@ -44,4 +44,10 @@ sqlite.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_status_checks_app_checked ON status_checks(app_id, checked_at);
   CREATE INDEX IF NOT EXISTS idx_status_checks_checked ON status_checks(checked_at);
+
+  CREATE TABLE IF NOT EXISTS push_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT UNIQUE NOT NULL,
+    created_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
 `);

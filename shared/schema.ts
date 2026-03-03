@@ -10,7 +10,7 @@ export const apps = sqliteTable("apps", {
   internalName: text("internal_name").unique().notNull(),
   displayName: text("display_name").notNull(),
   baseUrl: text("base_url").notNull(),
-  isActive: integer("is_active", { mode: "boolean" }).default(1).notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).default(sql`1`).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });
@@ -34,6 +34,12 @@ export const statusChecks = sqliteTable("status_checks", {
 export const appsRelations = relations(apps, ({ many }) => ({
   checks: many(statusChecks),
 }));
+
+export const pushTokens = sqliteTable("push_tokens", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  token: text("token").unique().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+});
 
 export const statusChecksRelations = relations(statusChecks, ({ one }) => ({
   app: one(apps, {

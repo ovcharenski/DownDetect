@@ -1,4 +1,4 @@
-# 📡 DownDetect v2.1.4
+# 📡 DownDetect v2.2.0
 
 Real-time monitoring for internal services. Dashboard for uptime, response time and status checks. **API-only management with X-API-Key authentication.**
 
@@ -14,6 +14,7 @@ Real-time monitoring for internal services. Dashboard for uptime, response time 
 - **Recent Activity** — table shows the last 20 checks (independent of time window)
 - **Automatic checks** on a configurable interval
 - **Healthy / Degraded / Unhealthy** status with clear badges
+- **Push notifications** — Android app receives alerts when status changes to degraded or unhealthy
 
 ### 🔐 API & Security
 
@@ -44,13 +45,14 @@ DownDetect/
 │   ├── index.ts            # Entry point
 │   ├── routes.ts           # API routes & auth (X-API-Key)
 │   ├── storage.ts          # DB layer
+│   ├── push.ts             # Firebase Cloud Messaging
 │   └── db.ts               # SQLite connection (data/system.db)
 ├── shared/                 # Shared types & API schema
 │   ├── routes.ts           # API paths & Zod schemas
 │   └── schema.ts           # Drizzle schema
 ├── data/                   # Runtime data (created on first run)
 │   └── system.db           # SQLite database
-├── .env                    # KEY_ACCESS, EXPIRE_HOURS, PORT, STAFF_URL, VITE_STAFF_URL, etc.
+├── .env                    # KEY_ACCESS, EXPIRE_HOURS, PORT, GOOGLE_APPLICATION_CREDENTIALS, etc.
 ├── package.json
 └── README.md
 ```
@@ -100,6 +102,12 @@ PORT=4635
 # Staff link: shown in title hover plaque (VITE_STAFF_URL = same for frontend)
 STAFF_URL=https://your-staff-site.com
 VITE_STAFF_URL=https://your-staff-site.com
+
+# Push notifications (optional): path to Firebase service account JSON
+GOOGLE_APPLICATION_CREDENTIALS=data/firebase-service-account.json
+
+# Optional: send push on every degraded/unhealthy check (default: only on transition from healthy)
+NOTIFY_ON_EVERY_BAD_CHECK=true
 ```
 
 4. Run in development:
@@ -129,23 +137,26 @@ X-API-Key: <KEY_ACCESS>
 
 ### Public Endpoints (no auth)
 
-| Method | Endpoint                                   | Description                                |
-| ------ | ------------------------------------------ | ------------------------------------------ |
-| GET    | `/api/health`                              | Health check                               |
-| GET    | `/api/apps`                                | List all apps with last check              |
-| GET    | `/api/apps/:internal_name`                 | Get one app                                |
-| GET    | `/api/apps/:internal_name/status?hours=24` | Status checks in last N hours (for charts) |
-| GET    | `/api/apps/:internal_name/status?limit=20` | Last N checks (for Recent Activity table)  |
-| GET    | `/api/apps/:internal_name/stats?hours=24`  | Uptime & avg latency (last N hours)        |
+| Method | Endpoint                                   | Description                                  |
+| ------ | ------------------------------------------ | -------------------------------------------- |
+| GET    | `/api/health`                              | Health check                                 |
+| GET    | `/api/apps`                                | List all apps with last check                |
+| GET    | `/api/apps/:internal_name`                 | Get one app                                  |
+| GET    | `/api/apps/:internal_name/status?hours=24` | Status checks in last N hours (for charts)   |
+| GET    | `/api/apps/:internal_name/status?limit=20` | Last N checks (for Recent Activity table)    |
+| GET    | `/api/apps/:internal_name/stats?hours=24`  | Uptime & avg latency (last N hours)          |
+| POST   | `/api/register-push`                       | Register FCM token (body: `{"token":"..."}`) |
 
 ### Protected Endpoints (X-API-Key required)
 
-| Method | Endpoint                         | Description          |
-| ------ | -------------------------------- | -------------------- |
-| POST   | `/api/apps`                      | Add application      |
-| PUT    | `/api/apps/:internal_name`       | Update application   |
-| DELETE | `/api/apps/:internal_name`       | Delete application   |
-| POST   | `/api/apps/:internal_name/check` | Trigger manual check |
+| Method | Endpoint                         | Description                           |
+| ------ | -------------------------------- | ------------------------------------- |
+| POST   | `/api/apps`                      | Add application                       |
+| PUT    | `/api/apps/:internal_name`       | Update application                    |
+| DELETE | `/api/apps/:internal_name`       | Delete application                    |
+| POST   | `/api/apps/:internal_name/check` | Trigger manual check                  |
+| GET    | `/api/push-status`               | Check push config & device count      |
+| POST   | `/api/test-push`                 | Send test notification to all devices |
 
 ### Example: Add application
 
@@ -203,4 +214,4 @@ curl -X DELETE "http://localhost:4635/api/apps/my-api" \
 
 ## 📋 Version
 
-**Version:** 2.1.4
+**Version:** 2.2.0

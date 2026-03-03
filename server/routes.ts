@@ -3,9 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
+import { initFirebase, isPushEnabled, sendPushToAll } from "./push";
 
 const CHECK_INTERVAL = Number(process.env.VITE_AUTO_TIME) * 60 || 60; // seconds
 const EXPIRE_HOURS = Number(process.env.EXPIRE_HOURS) || 24;
+const NOTIFY_ON_EVERY_BAD_CHECK = process.env.NOTIFY_ON_EVERY_BAD_CHECK === "true";
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   const apiKey = req.headers["x-api-key"];
@@ -126,7 +128,46 @@ export async function registerRoutes(
     res.json(check);
   });
 
+  // Register push token (public)
+  app.post(api.registerPush.path, async (req, res) => {
+    try {
+      const input = api.registerPush.input.parse(req.body);
+      await storage.addPushToken(input.token);
+      const count = (await storage.getPushTokens()).length;
+      console.log("Push: Token registered, total devices:", count);
+      res.json({ ok: true });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Push status (protected) - check if push is configured and how many devices
+  app.get("/api/push-status", requireAuth, async (_req, res) => {
+    const tokens = await storage.getPushTokens();
+    res.json({
+      pushEnabled: isPushEnabled(),
+      registeredDevices: tokens.length,
+    });
+  });
+
+  // Test push (protected) - send test notification to all registered devices
+  app.post("/api/test-push", requireAuth, async (_req, res) => {
+    if (!isPushEnabled()) {
+      return res.status(503).json({ message: "Push not configured (Firebase credentials missing)" });
+    }
+    const tokens = await storage.getPushTokens();
+    if (tokens.length === 0) {
+      return res.status(404).json({ message: "No devices registered. Open the app and ensure api_base_url is set in config." });
+    }
+    await sendPushToAll(tokens, "DownDetect Test", "This is a test notification");
+    res.json({ ok: true, devices: tokens.length });
+  });
+
   // === Scheduler ===
+  initFirebase();
   startScheduler();
 
   return httpServer;
@@ -135,6 +176,7 @@ export async function registerRoutes(
 // --- Scheduler Logic ---
 
 async function checkAppStatus(app: any) {
+  const prevCheck = await storage.getLastCheck(app.id);
   const start = Date.now();
   let status: "healthy" | "degraded" | "unhealthy" = "unhealthy";
   let statusCode: number | undefined;
@@ -186,7 +228,7 @@ async function checkAppStatus(app: any) {
       errorMsg = `HTTP ${response.status}`;
     }
 
-    return await storage.addStatusCheck({
+    const newCheck = await storage.addStatusCheck({
       appId: Number(app.id),
       status,
       statusCode,
@@ -194,13 +236,50 @@ async function checkAppStatus(app: any) {
       version,
       errorMessage: errorMsg,
     });
+
+    const shouldNotify =
+      isPushEnabled() &&
+      (status === "degraded" || status === "unhealthy") &&
+      (NOTIFY_ON_EVERY_BAD_CHECK || prevCheck?.status === "healthy" || !prevCheck);
+    if (shouldNotify) {
+      const tokens = await storage.getPushTokens();
+      if (tokens.length === 0) {
+        console.log("Push: Status changed to", status, "but no devices registered");
+      } else {
+        const title = "DownDetect Alert";
+        const body = `${app.displayName} is ${status}`;
+        console.log("Push: Sending alert for", app.displayName, "->", status);
+        sendPushToAll(tokens, title, body).catch((e) =>
+          console.error("Push send error:", e)
+        );
+      }
+    }
+
+    return newCheck;
   } catch (err: any) {
-    return await storage.addStatusCheck({
+    const newCheck = await storage.addStatusCheck({
       appId: Number(app.id),
       status: "unhealthy",
       responseTime: Date.now() - start,
       errorMessage: err.message || "Network Error",
     });
+
+    const shouldNotify =
+      isPushEnabled() &&
+      (NOTIFY_ON_EVERY_BAD_CHECK || prevCheck?.status === "healthy" || !prevCheck);
+    if (shouldNotify) {
+      const tokens = await storage.getPushTokens();
+      if (tokens.length > 0) {
+        console.log("Push: Sending alert for", app.displayName, "-> unhealthy (error)");
+        sendPushToAll(
+          tokens,
+          "DownDetect Alert",
+          `${app.displayName} is unhealthy`
+        ).catch((e) => console.error("Push send error:", e));
+      }
+    }
+
+    return newCheck;
   }
 }
 

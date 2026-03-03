@@ -1,6 +1,6 @@
 {
   "name": "rest-express",
-  "version": "2.1.4",
+  "version": "2.2.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -54,6 +54,7 @@
     "drizzle-zod": "^0.7.0",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.0.1",
+    "firebase-admin": "^13.0.0",
     "express-session": "^1.18.1",
     "framer-motion": "^11.18.2",
     "input-otp": "^1.4.2",

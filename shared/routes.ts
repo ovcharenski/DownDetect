@@ -113,6 +113,15 @@ export const api = {
       },
     },
   },
+  registerPush: {
+    method: 'POST' as const,
+    path: '/api/register-push',
+    input: z.object({ token: z.string().min(1) }),
+    responses: {
+      200: z.object({ ok: z.boolean() }),
+      400: errorSchemas.validation,
+    },
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

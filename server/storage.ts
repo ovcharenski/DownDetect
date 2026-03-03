@@ -1,4 +1,4 @@
-import { apps, statusChecks, type App, type InsertApp, type StatusCheck, type InsertStatusCheck, type AppStatsResponse } from "@shared/schema";
+import { apps, statusChecks, pushTokens, type App, type InsertApp, type StatusCheck, type InsertStatusCheck, type AppStatsResponse } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 
@@ -22,6 +22,11 @@ export interface IStorage {
   
   // Maintenance
   cleanupOldChecks(hours: number): Promise<number>;
+
+  // Push Tokens
+  addPushToken(token: string): Promise<void>;
+  getPushTokens(): Promise<string[]>;
+  removePushToken(token: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -124,7 +129,23 @@ export class DatabaseStorage implements IStorage {
     const thresholdTimestamp = Math.floor(threshold.getTime() / 1000);
 
     const result = await db.delete(statusChecks).where(sql`${statusChecks.checkedAt} < ${thresholdTimestamp}`);
-    return Number(result.rowCount);
+    return Number((result as { changes?: number }).changes ?? 0);
+  }
+
+  async addPushToken(token: string): Promise<void> {
+    await db
+      .insert(pushTokens)
+      .values({ token })
+      .onConflictDoNothing({ target: pushTokens.token });
+  }
+
+  async getPushTokens(): Promise<string[]> {
+    const rows = await db.select({ token: pushTokens.token }).from(pushTokens);
+    return rows.map((r) => r.token);
+  }
+
+  async removePushToken(token: string): Promise<void> {
+    await db.delete(pushTokens).where(eq(pushTokens.token, token));
   }
 }
 
