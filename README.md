@@ -1,4 +1,4 @@
-# 📡 DownDetect v2.2.0
+# 📡 DownDetect
 
 Real-time monitoring for internal services. Dashboard for uptime, response time and status checks. **API-only management with X-API-Key authentication.**
 
@@ -209,9 +209,3 @@ curl -X DELETE "http://localhost:4635/api/apps/my-api" \
 
 - Data is stored in `data/` at the project root, not in `dist/data`
 - Run `npm start` from the project root so `data/system.db` is used
-
----
-
-## 📋 Version
-
-**Version:** 2.2.0

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
-  status: "healthy" | "degraded" | "unhealthy" | string;
+  status: "healthy" | "degraded" | "unhealthy" | "maintenance" | string;
   className?: string;
   showText?: boolean;
 }
@@ -24,6 +24,11 @@ export function StatusBadge({ status, className, showText = true }: StatusBadgeP
       colorClass: "bg-red-500/15 text-red-500 border-red-500/20",
       dotClass: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]",
       label: "Unhealthy"
+    },
+    maintenance: {
+      colorClass: "bg-blue-500/15 text-blue-500 border-blue-500/20",
+      dotClass: "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]",
+      label: "Maintenance"
     }
   };
 

@@ -25,9 +25,11 @@ export default function AppDetails() {
   if (!app) return <div className="p-12 text-center text-red-500">App not found</div>;
 
   // Latest status for header badge (from last 20 checks)
-  const latestStatus = statusRecent && statusRecent.length > 0
-    ? statusRecent[0].status
-    : "unknown";
+  const latestStatus = !app.isActive
+    ? "maintenance"
+    : statusRecent && statusRecent.length > 0
+      ? statusRecent[0].status
+      : "unknown";
 
   // Charts: last 24 hours
   const chartData = statusHistory?.slice().reverse().map(check => ({

@@ -65,7 +65,9 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <StatusBadge status={app.lastCheck?.status || "unknown"} />
+                <StatusBadge
+                  status={!app.isActive ? "maintenance" : (app.lastCheck?.status || "unknown")}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-6">
