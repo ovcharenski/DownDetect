@@ -3,7 +3,6 @@ import { formatDistanceToNow } from "date-fns";
 import { Server, Clock, ArrowRight } from "lucide-react";
 import { useApps } from "@/hooks/use-apps";
 import { StatusBadge } from "@/components/StatusBadge";
-import { MaintenanceMessage } from "@/components/MaintenanceMessage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -48,10 +47,10 @@ export default function Dashboard() {
       </div>
 
       {/* Grid of Apps */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
         {apps?.map((app) => (
-          <Link key={app.id} href={`/app/${app.internalName}`} className="block group h-full">
-            <div className="h-full bg-card border border-border rounded-xl p-6 hover:border-muted-foreground/30 transition-all duration-300 relative overflow-hidden">
+          <Link key={app.id} href={`/app/${app.internalName}`} className="block group">
+            <div className="bg-card border border-border rounded-xl p-6 hover:border-muted-foreground/30 transition-all duration-300 relative overflow-hidden">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-secondary border border-border">
@@ -72,9 +71,16 @@ export default function Dashboard() {
               </div>
 
               {!app.isActive ? (
-                <MaintenanceMessage compact className="mt-6" />
+                <div className="mt-6 min-h-[3.25rem] space-y-1">
+                  <p className="text-sm font-semibold text-foreground leading-snug">
+                    Maintenance is underway
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    The site will be available soon... maybe.
+                  </p>
+                </div>
               ) : (
-              <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-2 gap-4 mt-6 min-h-[3.25rem]">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Response</p>
                   <p className="text-sm font-mono text-foreground font-medium">
@@ -93,9 +99,11 @@ export default function Dashboard() {
               <div className="mt-6 pt-4 border-t border-border flex justify-between items-center">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="w-3.5 h-3.5" />
-                  {app.lastCheck?.checkedAt
-                    ? formatDistanceToNow(new Date(app.lastCheck.checkedAt), { addSuffix: true })
-                    : "Never checked"}
+                  {!app.isActive
+                    ? "Under maintenance"
+                    : app.lastCheck?.checkedAt
+                      ? formatDistanceToNow(new Date(app.lastCheck.checkedAt), { addSuffix: true })
+                      : "Never checked"}
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-all" />
               </div>
