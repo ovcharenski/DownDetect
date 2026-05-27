@@ -4,22 +4,22 @@ import type { App } from "@shared/schema";
 import { storage } from "./storage";
 
 const MAINTENANCE_HTML = `<!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Технические работы</title>
+  <title>Maintenance</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #e2e8f0; }
-    .box { text-align: center; padding: 2rem; max-width: 28rem; }
-    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    p { color: #94a3b8; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #e2e8f0; }
+    .box { text-align: center; padding: 2rem 1.5rem; max-width: 42rem; }
+    h1 { font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 700; line-height: 1.15; margin: 0 0 1.25rem; letter-spacing: -0.02em; }
+    p { font-size: clamp(1.125rem, 3vw, 1.5rem); color: #94a3b8; margin: 0; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="box">
-    <h1>Технические работы</h1>
-    <p>Сайт временно недоступен. Попробуйте позже.</p>
+    <h1>Maintenance is underway</h1>
+    <p>The site will be available soon... maybe.</p>
   </div>
 </body>
 </html>`;

@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Server, Clock, ArrowRight } from "lucide-react";
 import { useApps } from "@/hooks/use-apps";
 import { StatusBadge } from "@/components/StatusBadge";
+import { MaintenanceMessage } from "@/components/MaintenanceMessage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -70,6 +71,9 @@ export default function Dashboard() {
                 />
               </div>
 
+              {!app.isActive ? (
+                <MaintenanceMessage compact className="mt-6" />
+              ) : (
               <div className="grid grid-cols-2 gap-4 mt-6">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Response</p>
@@ -84,6 +88,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
+              )}
 
               <div className="mt-6 pt-4 border-t border-border flex justify-between items-center">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

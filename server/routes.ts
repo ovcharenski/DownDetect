@@ -5,8 +5,15 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { initFirebase, isPushEnabled, sendPushToAll } from "./push";
 import { syncAll, syncApp, stopStubForApp } from "./maintenance";
+import type { App } from "@shared/schema";
 
 const CHECK_INTERVAL = Number(process.env.VITE_AUTO_TIME) * 60 || 60; // seconds
+
+/** Omit internal port from public API responses. */
+function toPublicApp<T extends App>(app: T): Omit<T, "port"> {
+  const { port: _port, ...rest } = app;
+  return rest;
+}
 const EXPIRE_HOURS = Number(process.env.EXPIRE_HOURS) || 24;
 const NOTIFY_ON_EVERY_BAD_CHECK = process.env.NOTIFY_ON_EVERY_BAD_CHECK === "true";
 
@@ -41,7 +48,7 @@ export async function registerRoutes(
     const appsWithStatus = await Promise.all(
       apps.map(async (app) => {
         const lastCheck = await storage.getLastCheck(app.id);
-        return { ...app, lastCheck };
+        return { ...toPublicApp(app), lastCheck };
       }),
     );
     res.json(appsWithStatus);
@@ -52,7 +59,7 @@ export async function registerRoutes(
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
-    res.json(app);
+    res.json(toPublicApp(app));
   });
 
   // App History - public: ?limit=N = last N checks (e.g. Recent Activity), ?hours=N = checks in last N hours (e.g. charts)

@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart,
 import { ArrowLeft, ExternalLink, Globe } from "lucide-react";
 import { useApp, useAppStatus, useAppStats, useAppStatusRecent } from "@/hooks/use-apps";
 import { StatusBadge } from "@/components/StatusBadge";
+import { MaintenanceMessage } from "@/components/MaintenanceMessage";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,6 +24,8 @@ export default function AppDetails() {
 
   if (isAppLoading) return <div className="p-12 text-center text-muted-foreground">Loading app details...</div>;
   if (!app) return <div className="p-12 text-center text-red-500">App not found</div>;
+
+  const inMaintenance = !app.isActive;
 
   // Latest status for header badge (from last 20 checks)
   const latestStatus = !app.isActive
@@ -71,6 +74,14 @@ export default function AppDetails() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
+        {inMaintenance ? (
+          <Card className="bg-card border-white/5">
+            <CardContent className="p-0">
+              <MaintenanceMessage />
+            </CardContent>
+          </Card>
+        ) : (
+          <>
         {/* Info Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-card border-white/5">
@@ -244,6 +255,8 @@ export default function AppDetails() {
           </Card>
 
         </div>
+          </>
+        )}
       </div>
     </div>
   );
