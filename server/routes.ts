@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { initFirebase, isPushEnabled, sendPushToAll } from "./push";
+import { syncAll, syncApp, stopStubForApp } from "./maintenance";
 
 const CHECK_INTERVAL = Number(process.env.VITE_AUTO_TIME) * 60 || 60; // seconds
 const EXPIRE_HOURS = Number(process.env.EXPIRE_HOURS) || 24;
@@ -87,6 +88,7 @@ export async function registerRoutes(
     try {
       const input = api.apps.create.input.parse(req.body);
       const app = await storage.createApp(input);
+      await syncApp(app);
       res.status(201).json(app);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -102,6 +104,7 @@ export async function registerRoutes(
       const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
       const app = await storage.updateApp(internalName, input);
       if (!app) return res.status(404).json({ message: "App not found" });
+      await syncApp(app);
       res.json(app);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -115,6 +118,7 @@ export async function registerRoutes(
     const internalName = Array.isArray(req.params.internal_name) ? req.params.internal_name[0] : req.params.internal_name;
     const app = await storage.getApp(internalName);
     if (!app) return res.status(404).json({ message: "App not found" });
+    await stopStubForApp(internalName);
     await storage.deleteApp(internalName);
     res.status(204).send();
   });
@@ -168,6 +172,7 @@ export async function registerRoutes(
 
   // === Scheduler ===
   initFirebase();
+  await syncAll();
   startScheduler();
 
   return httpServer;
@@ -310,6 +315,7 @@ function startScheduler() {
 
 async function runChecks() {
   try {
+    await syncAll();
     const apps = await storage.getApps();
     const activeApps = apps.filter((a) => a.isActive);
 
@@ -342,24 +348,30 @@ async function runChecks() {
     const apps = await storage.getApps();
     if (apps.length === 0) {
       console.log("Seeding database...");
-      await storage.createApp({
+      const google = await storage.createApp({
         internalName: "google-check",
         displayName: "Google Public DNS",
         baseUrl: "https://dns.google",
+        port: 443,
         isActive: true,
       });
-      await storage.createApp({
+      await syncApp(google);
+      const example = await storage.createApp({
         internalName: "example-com",
         displayName: "Example Domain",
         baseUrl: "https://example.com",
+        port: 443,
         isActive: true,
       });
-      await storage.createApp({
+      await syncApp(example);
+      const broken = await storage.createApp({
         internalName: "broken-app",
         displayName: "Broken App",
         baseUrl: "https://this-does-not-exist-12345.com",
+        port: 8080,
         isActive: true,
       });
+      await syncApp(broken);
     }
   }
 })();

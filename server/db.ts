@@ -26,6 +26,7 @@ sqlite.exec(`
     internal_name TEXT UNIQUE NOT NULL,
     display_name TEXT NOT NULL,
     base_url TEXT NOT NULL,
+    port INTEGER,
     is_active INTEGER DEFAULT 1 NOT NULL,
     created_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
     updated_at INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL
@@ -51,3 +52,10 @@ sqlite.exec(`
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL
   );
 `);
+
+const appsColumns = sqlite
+  .prepare("PRAGMA table_info(apps)")
+  .all() as { name: string }[];
+if (!appsColumns.some((c) => c.name === "port")) {
+  sqlite.exec("ALTER TABLE apps ADD COLUMN port INTEGER");
+}

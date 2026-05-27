@@ -14,6 +14,7 @@ Real-time monitoring for internal services. Dashboard for uptime, response time 
 - **Recent Activity** — table shows the last 20 checks (independent of time window)
 - **Automatic checks** on a configurable interval
 - **Healthy / Degraded / Unhealthy** status with clear badges
+- **Maintenance stubs** — when `isActive=false`, an HTTP stub page is served on `port` (same port as the real site; TLS via nginx)
 - **Push notifications** — Android app receives alerts when status changes to degraded or unhealthy
 
 ### 🔐 API & Security
@@ -164,8 +165,19 @@ X-API-Key: <KEY_ACCESS>
 curl -X POST "http://localhost:4635/api/apps" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your_secret_key_here" \
-  -d '{"internalName":"my-api","displayName":"My API","baseUrl":"https://api.example.com","isActive":true}'
+  -d '{"internalName":"my-api","displayName":"My API","baseUrl":"https://api.example.com","port":8080,"isActive":true}'
 ```
+
+### Example: Enable maintenance (stub on port)
+
+```bash
+curl -X PUT "http://localhost:4635/api/apps/my-api" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_secret_key_here" \
+  -d '{"isActive":false,"port":8080}'
+```
+
+When `isActive` is `false`, DownDetect starts an HTTP server on `0.0.0.0:<port>` with a maintenance page (503). Monitoring skips inactive apps. Set `port` to the same port your site uses (nginx terminates HTTPS).
 
 ### Example: Trigger manual check
 

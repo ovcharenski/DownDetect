@@ -10,6 +10,7 @@ export const apps = sqliteTable("apps", {
   internalName: text("internal_name").unique().notNull(),
   displayName: text("display_name").notNull(),
   baseUrl: text("base_url").notNull(),
+  port: integer("port"),
   isActive: integer("is_active", { mode: "boolean" }).default(sql`1`).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
