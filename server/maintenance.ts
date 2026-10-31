@@ -51,17 +51,11 @@ function stopStub(internalName: string): Promise<void> {
   });
 }
 
-function startStub(internalName: string, port: number): Promise<void> {
-  const stubApp = createStubApp();
-  const server = createServer(stubApp);
-  return new Promise((resolve, reject) => {
-    server.on("error", reject);
-    server.listen({ port, host: "0.0.0.0" }, () => {
-      stubs.set(internalName, { server, port });
-      console.log(`[maintenance] Stub started for ${internalName} on 0.0.0.0:${port}`);
-      resolve();
-    });
-  });
+function startStub(internalName: string, _port: number): Promise<void> {
+  // Caddy owns the public ports in the containerized deployment. Keep the
+  // application state available to callers without binding extra sockets.
+  console.log(`[maintenance] ${internalName} is inactive; proxy handles maintenance responses.`);
+  return Promise.resolve();
 }
 
 export async function syncApp(app: App): Promise<void> {
