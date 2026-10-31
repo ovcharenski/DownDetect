@@ -5,7 +5,6 @@ COPY package*.json tsconfig.json vite.config.ts ./
 RUN npm ci
 COPY . .
 RUN npm run build
-RUN npm prune --omit=dev
 
 FROM node:20-alpine AS runner
 WORKDIR /app
